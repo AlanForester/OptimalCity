@@ -79,7 +79,7 @@ jobs:
     - name: Deploy to forester.pro
       uses: appleboy/ssh-action@v1.0.3
       with:
-        host: forester.pro
+        host: ${{ secrets.FORESTER_HOST }}
         username: root
         key: ${{ secrets.FORESTER_SSH }}
         port: 22
