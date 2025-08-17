@@ -13,7 +13,7 @@ RSpec.describe NatsService do
 
   describe '#connect' do
     it 'подключается к NATS серверу' do
-      expect(NATS).to receive(:connect).with('nats://nats:4222')
+      expect(NATS).to receive(:connect).with('nats://localhost:4222')
       nats_service.connect
     end
 
