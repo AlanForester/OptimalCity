@@ -79,7 +79,7 @@ jobs:
     - name: Deploy to forester.pro
       uses: appleboy/ssh-action@v1.0.3
       with:
-        host: ${{ secrets.FORESTER_HOST }}
+        host: forester.pro
         username: root
         key: ${{ secrets.FORESTER_SSH }}
         port: 22
@@ -89,7 +89,7 @@ jobs:
           cd /var/www/optimalcity
           
           # Останавливаем существующие контейнеры
-          docker-compose -f docker-compose.prod.yml down || true
+          docker compose -f docker-compose.prod.yml down || true
           
           # Удаляем старые образы
           docker system prune -f
@@ -109,17 +109,47 @@ jobs:
           fi
           
           # Собираем и запускаем контейнеры в production режиме
-          docker-compose -f docker-compose.prod.yml build --no-cache
-          docker-compose -f docker-compose.prod.yml up -d
+          docker compose -f docker-compose.prod.yml build --no-cache
+          docker compose -f docker-compose.prod.yml up -d
           
           # Ждем запуска сервисов
-          sleep 45
+          echo "Ожидание запуска сервисов..."
+          sleep 60
           
-          # Проверяем статус
-          docker-compose -f docker-compose.prod.yml ps
+          # Проверяем статус контейнеров
+          echo "Статус контейнеров:"
+          docker compose -f docker-compose.prod.yml ps
           
-          # Проверяем доступность сервисов
-          curl -f http://localhost:3000 || echo "Rails app not responding"
-          curl -f http://localhost:8222 || echo "NATS monitoring not responding"
+          # Проверяем логи контейнеров
+          echo "Логи weather_display:"
+          docker compose -f docker-compose.prod.yml logs --tail=20 weather_display
           
-          echo "Deployment completed successfully!"
+          echo "Логи weather_fetcher:"
+          docker compose -f docker-compose.prod.yml logs --tail=20 weather_fetcher
+          
+          # Проверяем доступность сервисов с повторными попытками
+          echo "Проверка доступности сервисов..."
+          
+          # Проверяем Rails приложение
+          for i in {1..5}; do
+            if curl -f http://localhost:3000 > /dev/null 2>&1; then
+              echo "✅ Rails app доступен на порту 3000"
+              break
+            else
+              echo "⏳ Попытка $i/5: Rails app не отвечает, ждем..."
+              sleep 10
+            fi
+          done
+          
+          # Проверяем NATS мониторинг
+          for i in {1..5}; do
+            if curl -f http://localhost:8222 > /dev/null 2>&1; then
+              echo "✅ NATS monitoring доступен на порту 8222"
+              break
+            else
+              echo "⏳ Попытка $i/5: NATS monitoring не отвечает, ждем..."
+              sleep 10
+            fi
+          done
+          
+          echo "🚀 Deployment completed!"

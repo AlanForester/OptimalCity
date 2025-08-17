@@ -17,9 +17,6 @@ COPY . .
 
 RUN chmod +x init_production.sh
 
-# Компилируем Tailwind CSS
-RUN bundle exec rails tailwindcss:build
-
 # Предкомпилируем ассеты
 RUN bundle exec rails assets:precompile
 
