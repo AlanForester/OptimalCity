@@ -76,7 +76,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Deploy to forester.pro
+    - name: Deploy to optimal-city-test.forester.pro
       uses: appleboy/ssh-action@v1.0.3
       with:
         host: ${{ secrets.FORESTER_HOST }}
