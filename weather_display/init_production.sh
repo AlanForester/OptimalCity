@@ -29,3 +29,4 @@ echo "🔄 Running database migrations..."
 bundle exec rails db:migrate
 
 echo "✅ Production database initialized successfully!"
+exit 0

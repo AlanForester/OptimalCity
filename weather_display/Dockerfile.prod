@@ -16,10 +16,11 @@ RUN bundle install --without development test
 COPY . .
 
 RUN chmod +x init_production.sh
+RUN chmod +x entrypoint.sh
 
 # Предкомпилируем ассеты
 RUN bundle exec rails assets:precompile
 
 EXPOSE 3000
 
-CMD ["./init_production.sh && bundle exec rails server -b 0.0.0.0"]
+CMD ["./entrypoint.sh"]
