@@ -12,6 +12,7 @@
         <p class="text-lg text-gray-600">Текущие показания температуры воздуха на <span id="current-date">...</span></p>
         <p class="text-sm text-gray-500 mt-1">Таймзона: <span id="user-timezone">...</span></p>
         <p class="text-xs text-gray-400 mt-1">Последнее обновление: <span id="last-update">...</span></p>
+        <p class="text-xs text-gray-400">Данные обновляются каждые 20 минут</p>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-8" id="cities-container">
@@ -142,7 +143,23 @@
           document.getElementById('current-date').textContent = result.user_date;
           
           // Обновляем время последнего обновления
-          document.getElementById('last-update').textContent = new Date().toLocaleTimeString('ru-RU');
+          const now = new Date();
+          document.getElementById('last-update').textContent = now.toLocaleTimeString('ru-RU');
+          
+          // Вычисляем время следующего обновления (20-минутные интервалы)
+          const minutes = now.getMinutes();
+          const nextMinutes = ((Math.floor(minutes / 20)) + 1) * 20;
+          const nextUpdate = new Date(now);
+          if (nextMinutes >= 60) {
+            nextUpdate.setHours(now.getHours() + 1, 0, 0, 0);
+          } else {
+            nextUpdate.setMinutes(nextMinutes, 0, 0);
+          }
+          
+          // Показываем время следующего обновления в заголовке
+          const timeUntilNext = Math.round((nextUpdate - now) / 1000 / 60);
+          document.querySelector('.text-xs.text-gray-400:last-child').textContent = 
+            `Данные обновляются каждые 20 минут. Следующее обновление через ~${timeUntilNext} мин`;
           
           // Отображаем данные для каждого города
           Object.keys(result.data).forEach(cityName => {
@@ -171,8 +188,8 @@
     document.addEventListener('DOMContentLoaded', function() {
       loadWeatherData();
       
-      // Обновляем данные каждые 5 минут
-      setInterval(loadWeatherData, 5 * 60 * 1000);
+      // Обновляем данные каждую минуту
+      setInterval(loadWeatherData, 60 * 1000);
     });
   </script>
 </body>
