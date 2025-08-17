@@ -1,0 +1,89 @@
+name: Build, Test & Deploy
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Build and test weather_fetcher
+      run: |
+        cd weather_fetcher
+        docker build -t weather_fetcher .
+        docker run --rm weather_fetcher bundle exec rspec
+    
+    - name: Build weather_display
+      run: |
+        cd weather_display
+        docker build -t weather_display .
+    
+    - name: Test weather_display (unit tests)
+      run: |
+        cd weather_display
+        docker run --rm weather_display bundle exec rspec spec/models/ spec/services/ --format documentation
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Deploy to forester.pro
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: forester.pro
+        username: root
+        key: ${{ secrets.FORESTER_SSH }}
+        port: 22
+        script: |
+          # Создаем директорию если не существует
+          mkdir -p /var/www/optimalcity
+          cd /var/www/optimalcity
+          
+          # Останавливаем существующие контейнеры
+          docker-compose -f docker-compose.prod.yml down || true
+          
+          # Удаляем старые образы
+          docker system prune -f
+          
+          # Клонируем/обновляем репозиторий
+          if [ -d ".git" ]; then
+            git pull origin main
+          else
+            git clone https://github.com/${{ github.repository }}.git .
+          fi
+          
+          # Создаем .env файл если не существует
+          if [ ! -f ".env" ]; then
+            cp env.prod.example .env
+            sed -i "s/your_openweathermap_api_key_here/${{ secrets.WEATHER_API_KEY }}/g" .env
+            sed -i "s/your_secure_postgres_password_here/${{ secrets.POSTGRES_PASSWORD || 'weather_password' }}/g" .env
+          fi
+          
+          # Собираем и запускаем контейнеры в production режиме
+          docker-compose -f docker-compose.prod.yml build --no-cache
+          docker-compose -f docker-compose.prod.yml up -d
+          
+          # Ждем запуска сервисов
+          sleep 45
+          
+          # Проверяем статус
+          docker-compose -f docker-compose.prod.yml ps
+          
+          # Проверяем доступность сервисов
+          curl -f http://localhost:3000 || echo "Rails app not responding"
+          curl -f http://localhost:8222 || echo "NATS monitoring not responding"
+          
+          echo "Deployment completed successfully!"
