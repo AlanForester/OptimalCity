@@ -18,21 +18,13 @@ class WeatherFetcher
     puts "Интервал обновления: каждые 20 минут"
     puts "Текущее время UTC: #{Time.now.utc.strftime('%H:%M:%S')}"
     
-    # Проверяем, нужно ли ждать до следующего интервала
-    current_time = Time.now.utc
-    current_minutes = current_time.min
-    
-    if current_minutes % 20 == 0
-      puts "Текущее время делится на 20 минут, начинаем сразу"
-      fetch_and_publish_weather
-    else
-      puts "Ожидание до следующего 20-минутного интервала..."
-      sleep_until_next_interval
-    end
+    # Начинаем сразу с получения данных
+    puts "Начинаем получение данных..."
+    fetch_and_publish_weather
     
     loop do
-      fetch_and_publish_weather
       sleep_until_next_interval
+      fetch_and_publish_weather
     end
   rescue Interrupt
     puts "\nЗавершение работы сервиса..."
@@ -133,30 +125,20 @@ class WeatherFetcher
   end
 
   def publish_weather_data(city, temperature)
-    # Округляем время до ближайших 20 минут в UTC
+    # Используем текущее время UTC без округления
     utc_time = Time.now.utc
-    rounded_time = round_to_20_minutes(utc_time)
-    
-    # Проверяем, что время делится на 20 минут
-    if rounded_time.min % 20 != 0
-      puts "#{Time.now.strftime('%H:%M:%S')} - Пропускаем запись для #{city}: время #{rounded_time.strftime('%H:%M')} не делится на 20 минут"
-      return
-    end
     
     data = {
       city: city,
       temperature: temperature,
-      timestamp: rounded_time.iso8601
+      timestamp: utc_time.iso8601
     }.to_json
 
     @nats.publish('weather.data', data)
+    puts "#{utc_time.strftime('%H:%M:%S')} UTC - Отправлены данные для #{city}: #{temperature}°C"
   end
 
-  def round_to_20_minutes(time)
-    minutes = time.min
-    rounded_minutes = (minutes / 20) * 20
-    Time.utc(time.year, time.month, time.day, time.hour, rounded_minutes, 0)
-  end
+
 
   def sleep_until_next_interval
     utc_time = Time.now.utc

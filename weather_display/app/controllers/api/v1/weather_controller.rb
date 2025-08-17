@@ -20,7 +20,8 @@ module Api
           @cities.each do |city|
             @weather_data[city] = WeatherDatum.where(city: city)
                                              .where('timestamp >= ? AND timestamp < ?', utc_start, utc_end)
-                                             .order(:timestamp)
+                                             .order(timestamp: :desc)
+                                             .limit(10)  # Ограничиваем количество записей для производительности
           end
           
           render json: {
