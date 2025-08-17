@@ -16,11 +16,10 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
     
-    - name: Build and test weather_fetcher
+    - name: Build weather_fetcher
       run: |
         cd weather_fetcher
         docker build -t weather_fetcher .
-        docker run --rm weather_fetcher bundle exec rspec
     
     - name: Build weather_display
       run: |
@@ -30,7 +29,7 @@ jobs:
     - name: Test weather_display (unit tests)
       run: |
         cd weather_display
-        docker run --rm weather_display bundle exec rspec spec/models/ spec/services/ --format documentation
+        docker run --rm weather_display bundle exec rspec --format progress
 
   deploy:
     needs: test

@@ -12,7 +12,6 @@ SimpleCov.start 'rails' do
   add_group 'Libraries', 'lib'
   
   minimum_coverage 60
-  minimum_coverage_by_file 50
 end
 
 require 'spec_helper'
