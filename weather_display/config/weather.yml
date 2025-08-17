@@ -1,0 +1,13 @@
+default: &default
+  cities:
+    - "Москва"
+    - "Санкт-Петербург"
+
+development:
+  <<: *default
+
+test:
+  <<: *default
+
+production:
+  <<: *default

@@ -1,0 +1,2 @@
+default: --format pretty features
+rerun: --format rerun --out rerun.txt --strict --tags 'not @wip'

@@ -1,0 +1,44 @@
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: weather_display_development
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  nats:
+    image: nats:2.11-alpine
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    command: ["-js", "-m", "8222"]
+
+  weather_fetcher:
+    build: ./weather_fetcher
+    environment:
+      - WEATHER_API_KEY=${WEATHER_API_KEY:-243b7c0194f27491d55637a61ffcd9ca}
+      - NATS_URL=nats://nats:4222
+    depends_on:
+      - nats
+
+  weather_display:
+    build: ./weather_display
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/weather_display_development
+      - NATS_URL=nats://nats:4222
+    depends_on:
+      - postgres
+      - nats
+    volumes:
+      - ./weather_display:/app
+      - /app/tmp
+      - /app/log
+
+volumes:
+  postgres_data:

@@ -1,0 +1,28 @@
+FROM ruby:3.4.5-slim
+
+RUN apt-get update -qq && apt-get install -y \
+    build-essential \
+    libpq-dev \
+    nodejs \
+    npm \
+    libyaml-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY Gemfile Gemfile.lock ./
+RUN bundle install --without development test
+
+COPY . .
+
+RUN chmod +x init_production.sh
+
+# Компилируем Tailwind CSS
+RUN bundle exec rails tailwindcss:build
+
+# Предкомпилируем ассеты
+RUN bundle exec rails assets:precompile
+
+EXPOSE 3000
+
+CMD ["./init_production.sh && bundle exec rails server -b 0.0.0.0"]

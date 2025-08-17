@@ -1,0 +1,57 @@
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: weather_display_production
+      POSTGRES_USER: weather_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-weather_password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - weather_network
+
+  nats:
+    image: nats:2.11-alpine
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    command: ["-js", "-m", "8222"]
+    restart: unless-stopped
+    networks:
+      - weather_network
+
+  weather_fetcher:
+    build: ./weather_fetcher
+    environment:
+      - WEATHER_API_KEY=${WEATHER_API_KEY}
+      - NATS_URL=nats://nats:4222
+    depends_on:
+      - nats
+    restart: unless-stopped
+    networks:
+      - weather_network
+
+  weather_display:
+    build:
+      context: ./weather_display
+      dockerfile: Dockerfile.prod
+    ports:
+      - "3000:3000"
+    environment:
+      - RAILS_ENV=production
+      - DATABASE_URL=postgresql://weather_user:${POSTGRES_PASSWORD:-weather_password}@postgres:5432/weather_display_production
+      - NATS_URL=nats://nats:4222
+    depends_on:
+      - postgres
+      - nats
+    restart: unless-stopped
+    networks:
+      - weather_network
+
+volumes:
+  postgres_data:
+
+networks:
+  weather_network:
+    driver: bridge

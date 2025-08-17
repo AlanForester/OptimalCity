@@ -1,0 +1,7 @@
+cities:
+  - Москва
+  - Санкт-Петербург
+
+interval: 1200
+
+api_key: test_api_key
