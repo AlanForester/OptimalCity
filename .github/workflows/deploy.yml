@@ -106,6 +106,7 @@ jobs:
             cp env.prod.example .env
             sed -i "s/your_openweathermap_api_key_here/${{ secrets.WEATHER_API_KEY }}/g" .env
             sed -i "s/your_secure_postgres_password_here/${{ secrets.POSTGRES_PASSWORD || 'weather_password' }}/g" .env
+            sed -i "s/your_rails_master_key_here/${{ secrets.RAILS_MASTER_KEY }}/g" .env
           fi
           
           # Собираем и запускаем контейнеры в production режиме
