@@ -9,7 +9,7 @@
 ## 📸 Демонстрация работы
 
 ![Веб-интерфейс системы](screenshot.png)
-[Демо](https:/optimalcity.forester.pro)
+[Демо optimal-city-test.forester.pro](https://optimal-city-test.forester.pro)
 
 ## 📋 Описание
 
